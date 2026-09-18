@@ -31,6 +31,7 @@ class FakeRepository:
         self.saved = (source, chunks, embeddings)
 
     async def search(self, embedding: list[float], limit: int) -> list[SearchResult]:
+        # This slice models SQL LIMIT: top_k caps how many closest chunks reach the LLM.
         return self.search_results[:limit]
 
 
@@ -60,6 +61,20 @@ async def test_ask_retrieves_context_before_generating_answer() -> None:
     assert answer == "Answered: What does pgvector do?"
     assert sources == [match]
     assert provider.answer_contexts == [match.content]
+
+
+@pytest.mark.asyncio
+async def test_top_k_limits_context_sent_to_answer_model() -> None:
+    provider = FakeProvider()
+    matches = [
+        SearchResult("guide", index, f"chunk {index}", 1.0 - index / 10) for index in range(5)
+    ]
+    service = RagService(provider, FakeRepository(matches), chunk_size=100, chunk_overlap=20)
+
+    _answer, sources = await service.ask("question", top_k=2)
+
+    assert len(sources) == 2
+    assert provider.answer_contexts == ["chunk 0", "chunk 1"]
 
 
 @pytest.mark.asyncio

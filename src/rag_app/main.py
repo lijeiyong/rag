@@ -15,7 +15,12 @@ from rag_app.models import (
     HealthResponse,
     SourceMatch,
 )
-from rag_app.providers import OpenAIProvider, ProviderNotConfiguredError, ProviderRequestError
+from rag_app.providers import (
+    AIProvider,
+    ProviderNotConfiguredError,
+    ProviderRequestError,
+    create_provider,
+)
 from rag_app.rag import NoDocumentsError, RagService
 from rag_app.repository import DocumentRepository
 
@@ -26,14 +31,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     database = Database(settings.database_url)
     await database.open()
 
-    provider = OpenAIProvider(
-        api_key=settings.openai_api_key,
-        embedding_model=settings.openai_embedding_model,
-        answer_model=settings.openai_answer_model,
-        embedding_dimensions=settings.embedding_dimensions,
-    )
+    provider = create_provider(settings)
     app.state.database = database
     app.state.provider = provider
+    app.state.provider_name = settings.ai_provider
     app.state.rag = RagService(
         provider,
         DocumentRepository(database),
@@ -77,12 +78,13 @@ async def provider_request_failed(_request: Request, error: ProviderRequestError
 @app.get("/health", response_model=HealthResponse)
 async def health(request: Request) -> HealthResponse:
     database = cast(Database, request.app.state.database)
-    provider = cast(OpenAIProvider, request.app.state.provider)
+    provider = cast(AIProvider, request.app.state.provider)
     database_ok = await database.is_healthy()
     return HealthResponse(
         status="ok" if database_ok else "degraded",
         database="connected" if database_ok else "unavailable",
-        openai_configured=provider.configured,
+        ai_provider=cast(str, request.app.state.provider_name),
+        provider_configured=provider.configured,
     )
 
 

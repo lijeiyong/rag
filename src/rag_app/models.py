@@ -13,6 +13,7 @@ class DocumentReceipt(BaseModel):
 
 class AskRequest(BaseModel):
     question: str = Field(min_length=1)
+    # top_k is the maximum number of semantically nearest chunks supplied to the LLM.
     top_k: int = Field(default=4, ge=1, le=20)
 
 
@@ -31,4 +32,5 @@ class AskResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     database: str
-    openai_configured: bool
+    ai_provider: str
+    provider_configured: bool

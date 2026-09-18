@@ -6,6 +6,10 @@ services:
     command: sleep infinity
     environment:
       DATABASE_URL: postgresql://rag:rag@db:5432/rag
+      AI_PROVIDER: ${AI_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_EMBEDDING_MODEL: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-2}
+      GEMINI_ANSWER_MODEL: ${GEMINI_ANSWER_MODEL:-gemini-3.8-flash}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       OPENAI_ANSWER_MODEL: ${OPENAI_ANSWER_MODEL:-gpt-5-mini}
